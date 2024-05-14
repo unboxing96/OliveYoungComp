@@ -1,46 +1,18 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate {
-    var webView: WKWebView!
-    var hasLoaded = false
-    var lastLoadedURL: URL?
+class ViewController: BaseWebViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let webConfiguration = WKWebViewConfiguration()
-        webView = WKWebView(frame: .zero, configuration: webConfiguration)
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        webView.navigationDelegate = self
-        view.addSubview(webView)
-
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            webView.rightAnchor.constraint(equalTo: view.rightAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            webView.leftAnchor.constraint(equalTo: view.leftAnchor)
-        ])
-
-        loadWebView()
         configureBackButton()
+        loadInitialWebView()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-
-        if !hasLoaded {
-            loadWebView()
-        }
-    }
-    
-    func loadWebView() {
-        if let url = URL(string: "https://m.oliveyoung.co.kr/") {
-            let request = URLRequest(url: url)
-            webView.load(request)
-            hasLoaded = true
-            lastLoadedURL = url
+    func loadInitialWebView() {
+        if let url = URL(string: "https://m.oliveyoung.co.kr/m/mtn") {
+//            print("ViewController | loadInitialWebView | initialURL: \(url)")
+            loadWebView(url: url)
         }
     }
 
@@ -50,42 +22,10 @@ class ViewController: UIViewController, WKNavigationDelegate {
     }
     
     @objc func backButtonTapped() {
-        if webView.canGoBack {
-            webView.goBack()
-        } else {
+//        if webView.canGoBack {
+//            webView.goBack()
+//        } else {
             navigationController?.popViewController(animated: true)
-        }
-    }
-
-    func shouldBlockURL(_ url: URL) -> Bool {
-        guard let host = url.host else {
-            return true
-        }
-        return !host.hasPrefix("m.oliveyoung.co.kr")
-    }
-
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if let url = navigationAction.request.url {
-            if url.absoluteString == "about:blank" {
-                decisionHandler(.cancel)
-                return
-            }
-            print("Link clicked: \(url)")
-            if shouldBlockURL(url) {
-                decisionHandler(.cancel)
-                return
-            }
-            if webView.url != url && lastLoadedURL != url {
-                lastLoadedURL = url
-                let newVC = GenericWebViewController()
-                newVC.url = url
-                navigationController?.pushViewController(newVC, animated: true)
-                decisionHandler(.cancel)
-            } else {
-                decisionHandler(.allow)
-            }
-        } else {
-            decisionHandler(.allow)
-        }
+//        }
     }
 }
