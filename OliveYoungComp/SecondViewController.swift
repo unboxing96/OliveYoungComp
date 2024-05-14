@@ -1,12 +1,13 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate {
+class SecondViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
-    var hasLoaded = false
+    var url: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .white
 
         let webConfiguration = WKWebViewConfiguration()
         webView = WKWebView(frame: .zero, configuration: webConfiguration)
@@ -20,26 +21,13 @@ class ViewController: UIViewController, WKNavigationDelegate {
             webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             webView.leftAnchor.constraint(equalTo: view.leftAnchor)
         ])
-
-        loadWebView()
-        configureBackButton()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-
-        if !hasLoaded {
-            loadWebView()
-        }
-    }
-    
-    func loadWebView() {
-        if let url = URL(string: "https://www.oliveyoung.co.kr/") {
+        
+        if let url = url {
             let request = URLRequest(url: url)
             webView.load(request)
-            hasLoaded = true
         }
+        
+        configureBackButton()
     }
 
     func configureBackButton() {
@@ -54,26 +42,24 @@ class ViewController: UIViewController, WKNavigationDelegate {
             navigationController?.popViewController(animated: true)
         }
     }
-    
+
     func shouldOpenInNewViewController(url: URL) -> Bool {
-         let urlString = url.absoluteString
-         if urlString.contains("/getPlanShopDetail.do") {
-             return true
-         } else if urlString.contains("/getGoodsDetail.do") {
-             return true
-         } else if urlString.contains("List.do") {
-             return true
-         }
-         return false
-     }
-    
+        let urlString = url.absoluteString
+        if urlString == "https://www.oliveyoung.co.kr/" {
+            return false
+        } else if urlString.hasPrefix("https://www.oliveyoung.co.kr/") {
+            return true
+        }
+        return false
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if let url = navigationAction.request.url, navigationAction.navigationType == .linkActivated {
             print("Link clicked: \(url)")
             if shouldOpenInNewViewController(url: url) {
-                let secondVC = SecondViewController()
-                secondVC.url = url
-                navigationController?.pushViewController(secondVC, animated: true)
+                let thirdVC = SecondViewController() // 새로운 SecondViewController 인스턴스를 생성하여 푸시
+                thirdVC.url = url
+                navigationController?.pushViewController(thirdVC, animated: true)
                 decisionHandler(.cancel)
             } else {
                 decisionHandler(.allow)
@@ -81,29 +67,21 @@ class ViewController: UIViewController, WKNavigationDelegate {
         } else {
             decisionHandler(.allow)
         }
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        print("SecondVC Started loading: \(webView.url?.absoluteString ?? "Unknown URL")")
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        print("Finished loading: \(webView.url?.absoluteString ?? "Unknown URL")")
+        print("SecondVC Finished loading: \(webView.url?.absoluteString ?? "Unknown URL")")
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        print("Failed to load: \(webView.url?.absoluteString ?? "Unknown URL") with error: \(error.localizedDescription)")
+        print("SecondVC Failed to load: \(webView.url?.absoluteString ?? "Unknown URL") with error: \(error.localizedDescription)")
     }
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-        if let url = navigationResponse.response.url {
-            print("Navigation response received for URL: \(url.absoluteString)")
-            if shouldOpenInNewViewController(url: url) {
-                let secondVC = SecondViewController()
-                secondVC.url = url
-                navigationController?.pushViewController(secondVC, animated: true)
-                decisionHandler(.cancel)
-            } else {
-                decisionHandler(.allow)
-            }
-        } else {
-            decisionHandler(.allow)
-        }
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        print("SecondVC Redirected to: \(webView.url?.absoluteString ?? "Unknown URL")")
     }
 }
