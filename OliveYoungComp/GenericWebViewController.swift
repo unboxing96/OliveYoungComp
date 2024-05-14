@@ -1,13 +1,14 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate {
+class GenericWebViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
-    var hasLoaded = false
+    var url: URL?
     var lastLoadedURL: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .white
 
         let webConfiguration = WKWebViewConfiguration()
         webView = WKWebView(frame: .zero, configuration: webConfiguration)
@@ -21,27 +22,14 @@ class ViewController: UIViewController, WKNavigationDelegate {
             webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             webView.leftAnchor.constraint(equalTo: view.leftAnchor)
         ])
-
-        loadWebView()
+        
+        if let url = url {
+            loadWebView(url: url)
+        } else {
+            print("URL is nil")
+        }
+        
         configureBackButton()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-
-        if !hasLoaded {
-            loadWebView()
-        }
-    }
-    
-    func loadWebView() {
-        if let url = URL(string: "https://m.oliveyoung.co.kr/") {
-            let request = URLRequest(url: url)
-            webView.load(request)
-            hasLoaded = true
-            lastLoadedURL = url
-        }
     }
 
     func configureBackButton() {
@@ -55,6 +43,12 @@ class ViewController: UIViewController, WKNavigationDelegate {
         } else {
             navigationController?.popViewController(animated: true)
         }
+    }
+
+    func loadWebView(url: URL) {
+        let request = URLRequest(url: url)
+        webView.load(request)
+        lastLoadedURL = url
     }
 
     func shouldBlockURL(_ url: URL) -> Bool {
