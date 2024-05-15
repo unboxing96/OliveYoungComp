@@ -16,6 +16,8 @@
 		E350DDB42BF05AF0007362E3 /* OliveYoungCompTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E350DDB32BF05AF0007362E3 /* OliveYoungCompTests.swift */; };
 		E350DDBE2BF05AF0007362E3 /* OliveYoungCompUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E350DDBD2BF05AF0007362E3 /* OliveYoungCompUITests.swift */; };
 		E350DDC02BF05AF0007362E3 /* OliveYoungCompUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E350DDBF2BF05AF0007362E3 /* OliveYoungCompUITestsLaunchTests.swift */; };
+		E3BC98B72BF46B0D00CFC482 /* GenericWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3BC98B52BF46B0C00CFC482 /* GenericWebViewController.swift */; };
+		E3BC98B82BF46B0D00CFC482 /* BaseWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3BC98B62BF46B0D00CFC482 /* BaseWebViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,8 @@
 		E350DDB92BF05AF0007362E3 /* OliveYoungCompUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OliveYoungCompUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E350DDBD2BF05AF0007362E3 /* OliveYoungCompUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OliveYoungCompUITests.swift; sourceTree = "<group>"; };
 		E350DDBF2BF05AF0007362E3 /* OliveYoungCompUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OliveYoungCompUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		E3BC98B52BF46B0C00CFC482 /* GenericWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GenericWebViewController.swift; sourceTree = "<group>"; };
+		E3BC98B62BF46B0D00CFC482 /* BaseWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseWebViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +106,8 @@
 				E350DD9C2BF05AEF007362E3 /* AppDelegate.swift */,
 				E350DD9E2BF05AEF007362E3 /* SceneDelegate.swift */,
 				E350DDA02BF05AEF007362E3 /* ViewController.swift */,
+				E3BC98B62BF46B0D00CFC482 /* BaseWebViewController.swift */,
+				E3BC98B52BF46B0C00CFC482 /* GenericWebViewController.swift */,
 				E350DDA22BF05AEF007362E3 /* Main.storyboard */,
 				E350DDA52BF05AF0007362E3 /* Assets.xcassets */,
 				E350DDA72BF05AF0007362E3 /* LaunchScreen.storyboard */,
@@ -258,9 +264,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E3BC98B82BF46B0D00CFC482 /* BaseWebViewController.swift in Sources */,
 				E350DDA12BF05AEF007362E3 /* ViewController.swift in Sources */,
 				E350DD9D2BF05AEF007362E3 /* AppDelegate.swift in Sources */,
 				E350DD9F2BF05AEF007362E3 /* SceneDelegate.swift in Sources */,
+				E3BC98B72BF46B0D00CFC482 /* GenericWebViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

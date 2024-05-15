@@ -51,6 +51,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
         if url.absoluteString == "about:blank" { return true }
         if url.absoluteString.contains("https://www.youtube.com/") { return true }
         if url.absoluteString.contains("https://gum.criteo.com/") { return true }
+        if url.absoluteString.contains("https://player.vimeo.com/") { return true }
         return false
     }
 
