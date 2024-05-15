@@ -27,6 +27,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
         let webConfiguration = WKWebViewConfiguration()
         webView = WKWebView(frame: .zero, configuration: webConfiguration)
         webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.allowsBackForwardNavigationGestures = true
         webView.navigationDelegate = self
         view.addSubview(webView)
 
@@ -46,7 +47,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
     }
 
     func shouldBlockURL(_ url: URL) -> Bool {
-        guard let host = url.host else { return true }
+//        guard let host = url.host else { return true }
         if url.absoluteString == "about:blank" { return true }
         if url.absoluteString.contains("https://www.youtube.com/") { return true }
         if url.absoluteString.contains("https://gum.criteo.com/") { return true }
@@ -54,17 +55,20 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
     }
 
     func shouldRefreshURL(_ url: URL) -> Bool {
-        // 특정 주소들을 여기에 추가합니다
+        if url.absoluteString.contains("https://m.oliveyoung.co.kr/m/cart") { return true }
+        
         let refreshURLs: [String] = [
-//            "https://m.oliveyoung.co.kr/m/mtn",
+            "https://m.oliveyoung.co.kr/m/mtn",
+            "https://m.oliveyoung.co.kr/m/mtn?menu=home",
             "https://m.oliveyoung.co.kr/m/mtn/shutter?t_page=%EC%85%94%ED%84%B0&t_click=%ED%99%88_%ED%83%AD%EB%B0%94_%EC%85%94%ED%84%B0",
             "https://m.oliveyoung.co.kr/m/mtn/history?tab=recent",
             "https://m.oliveyoung.co.kr/m/mypage/myPageMain.do",
-//            "https://m.oliveyoung.co.kr/m/login/loginForm.do",
-            "https://m.oliveyoung.co.kr/m/cart/getCart.do?t_page=%ED%9E%88%EC%8A%A4%ED%86%A0%EB%A6%AC&t_click=%EC%9E%A5%EB%B0%94%EA%B5%AC%EB%8B%88",
-        
+            "https://m.oliveyoung.co.kr/m/login/loginForm.do",
+            "https://m.oliveyoung.co.kr/m/login/login.do",
+            "https://m.oliveyoung.co.kr/m/mtn/history",
+            "https://m.oliveyoung.co.kr/m/mtn/setting?t_page=%EB%A7%88%EC%9D%B4%ED%8E%98%EC%9D%B4%EC%A7%80&t_click=%EC%84%A4%EC%A0%95"
+            
         ]
-
         return refreshURLs.contains(url.absoluteString)
     }
 
@@ -94,6 +98,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
         }
 
         if shouldBlockURL(url) {
+            print("BLOCK !!!!!!!!!!!!!!!!!")
             decisionHandler(.cancel)
             return
         }
@@ -111,7 +116,6 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
                 decisionHandler(.cancel)
             }
 
-            // Print the navigation stack after pushing the new view controller
             printNavigationStack()
         } else {
             initialLoadCompleted = true
