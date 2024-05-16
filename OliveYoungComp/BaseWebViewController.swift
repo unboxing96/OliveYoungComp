@@ -1,15 +1,3 @@
-//let refreshURLs: [String] = [
-//    "https://m.oliveyoung.co.kr/m/mtn",
-//    "https://m.oliveyoung.co.kr/m/mtn/shutter?t_page=%EC%85%94%ED%84%B0&t_click=%ED%99%88_%ED%83%AD%EB%B0%94_%EC%85%94%ED%84%B0",
-//    "https://m.oliveyoung.co.kr/m/mtn/history?tab=recent",
-//    "https://m.oliveyoung.co.kr/m/mypage/myPageMain.do",
-//    "https://m.oliveyoung.co.kr/m/login/loginForm.do",
-//    "https://m.oliveyoung.co.kr/m/cart/getCart.do?t_page=%ED%9E%88%EC%8A%A4%ED%86%A0%EB%A6%AC&t_click=%EC%9E%A5%EB%B0%94%EA%B5%AC%EB%8B%88",
-//    
-//]
-
-
-
 import UIKit
 import WebKit
 
@@ -25,6 +13,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
 
     func configureWebView() {
         let webConfiguration = WKWebViewConfiguration()
+        
         webView = WKWebView(frame: .zero, configuration: webConfiguration)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.allowsBackForwardNavigationGestures = true
@@ -47,16 +36,26 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
     }
 
     func shouldBlockURL(_ url: URL) -> Bool {
-//        guard let host = url.host else { return true }
-        if url.absoluteString == "about:blank" { return true }
-        if url.absoluteString.contains("https://www.youtube.com/") { return true }
-        if url.absoluteString.contains("https://gum.criteo.com/") { return true }
-        if url.absoluteString.contains("https://player.vimeo.com/") { return true }
-        return false
+        let blockedURLs = [
+            "about:blank",
+            "https://www.youtube.com/",
+            "https://gum.criteo.com/",
+            "https://player.vimeo.com/",
+            "https://play.grip.show/",
+            "https://grip-8c4ce.firebaseapp.com/",
+            "https://livegrip.oliveyoung.co.kr/",
+            "https://m.oliveyoung.co.kr/m/live/",
+            "https://cf-images.oliveyoung.co.kr/",
+            "https://image.oliveyoung.co.kr/",
+            "https://*.avkit.apple.com/" // 추가: AVKit 관련 URL
+        ]
+        
+        return blockedURLs.contains { url.absoluteString.contains($0) }
     }
 
     func shouldRefreshURL(_ url: URL) -> Bool {
         if url.absoluteString.contains("https://m.oliveyoung.co.kr/m/cart") { return true }
+        if url.absoluteString.contains("https://m.oliveyoung.co.kr/m/mtn/search?") { return true }
         
         let refreshURLs: [String] = [
             "https://m.oliveyoung.co.kr/m/mtn",
@@ -90,39 +89,42 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
             decisionHandler(.allow)
             return
         }
-
+        
         print("test url: \(url)")
-
+        
         if initialLoadCompleted && url == lastLoadedURL {
             decisionHandler(.cancel)
             return
         }
-
+        
         if shouldBlockURL(url) {
             print("BLOCK !!!!!!!!!!!!!!!!!")
             decisionHandler(.cancel)
             return
         }
-
+        
         if initialLoadCompleted {
             if shouldRefreshURL(url) {
                 decisionHandler(.allow)
                 return
             } else {
-                // 그 외의 경우 새로운 뷰컨트롤러를 푸시합니다
-                print("BaseWebViewController | webView | initialLoadCompleted | url: \(url)")
-                let newVC = GenericWebViewController()
-                newVC.url = url
-                navigationController?.pushViewController(newVC, animated: true)
-                decisionHandler(.cancel)
+                // 클로저 내부에서 self를 weak로 참조
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else {
+                        decisionHandler(.cancel)
+                        return
+                    }
+                    print("BaseWebViewController | webView | initialLoadCompleted | url: \(url)")
+                    let newVC = GenericWebViewController()
+                    newVC.url = url
+                    self.navigationController?.pushViewController(newVC, animated: true)
+                    decisionHandler(.cancel)
+                    self.printNavigationStack()
+                }
             }
-
-            printNavigationStack()
         } else {
             initialLoadCompleted = true
             decisionHandler(.allow)
         }
-
-//        lastLoadedURL = url
     }
 }
