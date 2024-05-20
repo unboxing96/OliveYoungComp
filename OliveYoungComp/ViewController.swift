@@ -11,7 +11,6 @@ class ViewController: BaseWebViewController {
     
     func loadInitialWebView() {
         if let url = URL(string: "https://m.oliveyoung.co.kr/m/mtn") {
-//            print("ViewController | loadInitialWebView | initialURL: \(url)")
             loadWebView(url: url)
         }
     }

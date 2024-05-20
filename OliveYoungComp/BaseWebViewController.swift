@@ -29,10 +29,8 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
     }
 
     func loadWebView(url: URL) {
-        print("BaseWebViewController | loadWebView | currentUrl: \(url)")
         let request = URLRequest(url: url)
         webView.load(request)
-//        lastLoadedURL = url
     }
 
     func shouldBlockURL(_ url: URL) -> Bool {
@@ -72,25 +70,11 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
         return refreshURLs.contains(url.absoluteString)
     }
 
-    func printNavigationStack() {
-        guard let viewControllers = navigationController?.viewControllers else {
-            print("No navigation controller or view controllers found.")
-            return
-        }
-
-        print("Current navigation stack count: \(viewControllers.count)")
-        for (index, viewController) in viewControllers.enumerated() {
-            print("ViewController at index \(index): \(type(of: viewController))")
-        }
-    }
-
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
             return
         }
-        
-        print("test url: \(url)")
         
         if initialLoadCompleted && url == lastLoadedURL {
             decisionHandler(.cancel)
@@ -98,7 +82,6 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
         }
         
         if shouldBlockURL(url) {
-            print("BLOCK !!!!!!!!!!!!!!!!!")
             decisionHandler(.cancel)
             return
         }
@@ -114,12 +97,10 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
                         decisionHandler(.cancel)
                         return
                     }
-                    print("BaseWebViewController | webView | initialLoadCompleted | url: \(url)")
                     let newVC = GenericWebViewController()
                     newVC.url = url
                     self.navigationController?.pushViewController(newVC, animated: true)
                     decisionHandler(.cancel)
-                    self.printNavigationStack()
                 }
             }
         } else {
