@@ -3,20 +3,28 @@ import WebKit
 
 class BaseViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
-    var lastLoadedURL: URL?
-    var initialLoadCompleted = false
 
     override func viewDidLoad() {
-        configureWebView()
         super.viewDidLoad()
+        print("BaseViewController | override viewDidLoad")
+        
+        configureWebView()
+        
+        if !AppState.shared.initialLoadCompleted {
+            loadInitialWebView()
+            AppState.shared.initialLoadCompleted = true
+        }
     }
-    
+
     func configureWebView() {
+        let contentController = WKUserContentController()
         let webConfiguration = WKWebViewConfiguration()
+        webConfiguration.userContentController = contentController
         
         webView = WKWebView(frame: .zero, configuration: webConfiguration)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.allowsBackForwardNavigationGestures = true
+        webView.isInspectable = true
         webView.navigationDelegate = self
         
         view.addSubview(webView)
@@ -33,6 +41,12 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         let request = URLRequest(url: url)
         webView.load(request)
     }
+    
+    func loadInitialWebView() {
+        if let url = URL(string: "https://m.oliveyoung.co.kr/m/mtn") {
+            loadWebView(url: url)
+        }
+    }
 
     func shouldBlockURL(_ url: URL) -> Bool {
         let blockedURLs = [
@@ -46,7 +60,7 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
             "https://m.oliveyoung.co.kr/m/live/",
             "https://cf-images.oliveyoung.co.kr/",
             "https://image.oliveyoung.co.kr/",
-            "https://*.avkit.apple.com/" // 추가: AVKit 관련 URL
+            "https://*.avkit.apple.com/"
         ]
         
         return blockedURLs.contains { url.absoluteString.contains($0) }
@@ -66,46 +80,45 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
             "https://m.oliveyoung.co.kr/m/login/login.do",
             "https://m.oliveyoung.co.kr/m/mtn/history",
             "https://m.oliveyoung.co.kr/m/mtn/setting?t_page=%EB%A7%88%EC%9D%B4%ED%8E%98%EC%9D%B4%EC%A7%80&t_click=%EC%84%A4%EC%A0%95"
-            
         ]
         return refreshURLs.contains(url.absoluteString)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
             return
         }
         
+        print("BaseViewController | decidePolicyFor | url: ")
+        
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
-        if initialLoadCompleted && url == lastLoadedURL {
+        if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
+            print("현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-        
+
         // 차단해야 하는 URL인 경우 -> 차단
         if shouldBlockURL(url) {
+            print("차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-        
-        if initialLoadCompleted {
-            // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
-            if shouldRefreshURL(url) {
-                decisionHandler(.allow)
-                return
-            
-            // stack에 push 해야 하는 경우
-            } else {
-                let newVC = GenericViewController()
-                newVC.url = url
-                self.navigationController?.pushViewController(newVC, animated: true)
-                decisionHandler(.cancel) // 페이지 이동은 cancel
-            }
-        } else {
-            initialLoadCompleted = true
+
+        // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
+        if shouldRefreshURL(url) {
+            print("새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
+            return
         }
+
+        // stack에 push 해야 하는 경우
+        print("stack에 push 해야 하는 경우")
+        let newVC = GenericViewController()
+        newVC.url = url
+        self.navigationController?.pushViewController(newVC, animated: true)
+        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
+        decisionHandler(.cancel) // 페이지 이동은 cancel
     }
 }

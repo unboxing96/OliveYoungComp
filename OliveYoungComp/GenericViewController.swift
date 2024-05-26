@@ -1,12 +1,15 @@
 import UIKit
 import WebKit
 
-class GenericViewController: BaseViewController {
+class GenericViewController: UIViewController, WKNavigationDelegate {
+    var webView: WKWebView!
     var url: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        configureBackButton()
+        print("GenericViewController | override viewDidLoad | url: ")
+        
+        configureWebView()
         
         if let url = url {
             loadWebView(url: url)
@@ -15,16 +18,29 @@ class GenericViewController: BaseViewController {
         }
     }
 
-    func configureBackButton() {
-        let backButton = UIBarButtonItem(title: "Back", style: .plain, target: self, action: #selector(backButtonTapped))
-        navigationItem.leftBarButtonItem = backButton
+    func configureWebView() {
+        let contentController = WKUserContentController()
+        let webConfiguration = WKWebViewConfiguration()
+        webConfiguration.userContentController = contentController
+        
+        webView = WKWebView(frame: .zero, configuration: webConfiguration)
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.allowsBackForwardNavigationGestures = true
+        webView.isInspectable = true
+        webView.navigationDelegate = self
+        
+        view.addSubview(webView)
+
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            webView.rightAnchor.constraint(equalTo: view.rightAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            webView.leftAnchor.constraint(equalTo: view.leftAnchor)
+        ])
     }
-    
-    @objc func backButtonTapped() {
-        if webView.canGoBack {
-            webView.goBack()
-        } else {
-            navigationController?.popViewController(animated: true)
-        }
+
+    func loadWebView(url: URL) {
+        let request = URLRequest(url: url)
+        webView.load(request)
     }
 }
