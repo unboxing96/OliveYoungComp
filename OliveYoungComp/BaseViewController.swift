@@ -4,7 +4,7 @@ import WebKit
 class BaseViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
     var vcvm = ViewControllerViewModel()
-
+ㅇ 
     override func viewDidLoad() {
         super.viewDidLoad()
         print("BaseViewController | override viewDidLoad")
@@ -49,14 +49,24 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         }
     }
 
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        isInitialLoad = false // 로드 완료 시 초기 로드 상태를 해제
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
             return
         }
         
-        print("BaseViewController | decidePolicyFor | url: \(url)")
+        // 초기 로드 시에는 navigationAction을 무시
+        if isInitialLoad {
+            decisionHandler(.allow)
+            return
+        }
         
+        print("BaseViewController | decidePolicyFor | url: \(url)")
+
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
             print("현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
@@ -82,7 +92,7 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         print("stack에 push 해야 하는 경우")
         let newVC = GenericViewController(url: url)
         self.navigationController?.pushViewController(newVC, animated: true)
-//        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
+        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
         decisionHandler(.cancel) // 페이지 이동은 cancel
     }
 }
