@@ -7,10 +7,10 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
     var initialLoadCompleted = false
 
     override func viewDidLoad() {
-        super.viewDidLoad()
         configureWebView()
+        super.viewDidLoad()
     }
-
+    
     func configureWebView() {
         let webConfiguration = WKWebViewConfiguration()
         
@@ -18,6 +18,7 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.allowsBackForwardNavigationGestures = true
         webView.navigationDelegate = self
+        
         view.addSubview(webView)
 
         NSLayoutConstraint.activate([
@@ -71,39 +72,36 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
             return
         }
         
-        print(url)
-        
+        // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if initialLoadCompleted && url == lastLoadedURL {
             decisionHandler(.cancel)
             return
         }
         
+        // 차단해야 하는 URL인 경우 -> 차단
         if shouldBlockURL(url) {
             decisionHandler(.cancel)
             return
         }
         
         if initialLoadCompleted {
+            // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
             if shouldRefreshURL(url) {
                 decisionHandler(.allow)
                 return
+            
+            // stack에 push 해야 하는 경우
             } else {
-                // 클로저 내부에서 self를 weak로 참조
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else {
-                        decisionHandler(.cancel)
-                        return
-                    }
-                    let newVC = GenericNavigationController()
-                    newVC.url = url
-                    self.navigationController?.pushViewController(newVC, animated: true)
-                    decisionHandler(.cancel)
-                }
+                let newVC = GenericViewController()
+                newVC.url = url
+                self.navigationController?.pushViewController(newVC, animated: true)
+                decisionHandler(.cancel) // 페이지 이동은 cancel
             }
         } else {
             initialLoadCompleted = true

@@ -1,18 +1,17 @@
 import UIKit
 import WebKit
 
-class RootNavigationController: BaseViewController {
+class GenericViewController: BaseViewController {
+    var url: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         configureBackButton()
-        loadInitialWebView()
-    }
-    
-    func loadInitialWebView() {
-        if let url = URL(string: "https://m.oliveyoung.co.kr/m/mtn") {
+        
+        if let url = url {
             loadWebView(url: url)
+        } else {
+            print("URL is nil")
         }
     }
 
