@@ -1,8 +1,6 @@
 import Foundation
 
 class ViewControllerViewModel {
-    var initialLoadCompleted: Bool = false
-
     func shouldBlockURL(_ url: URL) -> Bool {
         let blockedURLs = [
             "about:blank",
