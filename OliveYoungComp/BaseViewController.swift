@@ -4,7 +4,8 @@ import WebKit
 class BaseViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
     var vcvm = ViewControllerViewModel()
-ㅇ 
+    var isInitialLoad: Bool = true // 초기 로드를 제어하는 플래그
+
     override func viewDidLoad() {
         super.viewDidLoad()
         print("BaseViewController | override viewDidLoad")
