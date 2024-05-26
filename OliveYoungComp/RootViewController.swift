@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-class ViewController: BaseWebViewController {
+class RootViewController: NavigationController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -16,15 +16,11 @@ class ViewController: BaseWebViewController {
     }
 
     func configureBackButton() {
-        let backButton = UIBarButtonItem(title: "Back", style: .plain, target: self, action: #selector(backButtonTapped))
+        let backButton = UIBarButtonItem(title: "< Back", style: .plain, target: self, action: #selector(backButtonTapped))
         navigationItem.leftBarButtonItem = backButton
     }
     
     @objc func backButtonTapped() {
-//        if webView.canGoBack {
-//            webView.goBack()
-//        } else {
-            navigationController?.popViewController(animated: true)
-//        }
+        navigationController?.popViewController(animated: true)
     }
 }

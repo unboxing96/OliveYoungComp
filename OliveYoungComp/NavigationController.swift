@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-class BaseWebViewController: UIViewController, WKNavigationDelegate {
+class NavigationController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
     var lastLoadedURL: URL?
     var initialLoadCompleted = false
@@ -76,6 +76,8 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
             return
         }
         
+        print(url)
+        
         if initialLoadCompleted && url == lastLoadedURL {
             decisionHandler(.cancel)
             return
@@ -97,7 +99,7 @@ class BaseWebViewController: UIViewController, WKNavigationDelegate {
                         decisionHandler(.cancel)
                         return
                     }
-                    let newVC = GenericWebViewController()
+                    let newVC = GenericViewController()
                     newVC.url = url
                     self.navigationController?.pushViewController(newVC, animated: true)
                     decisionHandler(.cancel)
