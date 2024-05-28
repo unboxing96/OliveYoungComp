@@ -1,11 +1,12 @@
 import UIKit
 import WebKit
 
-class BaseViewController: UIViewController, WKNavigationDelegate {
+class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
+    
     var webView: WKWebView!
-    var vcvm = ViewControllerViewModel()
     var isInitialLoad: Bool = true // 초기 로드를 제어하는 플래그
-
+    var vcvm = ViewControllerViewModel()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         print("BaseViewController | override viewDidLoad")
@@ -17,9 +18,35 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
             AppState.shared.initialLoadCompleted = true
         }
     }
-
+    
     func configureWebView() {
         let contentController = WKUserContentController()
+        contentController.add(self, name: "buttonClicked")
+        
+        let jsCode = """
+        window.addEventListener('load', function() {
+            function addClickListenerToButtons() {
+                var buttons = document.getElementsByClassName('BasketButton_basket-button___xAaP');
+                Array.prototype.forEach.call(buttons, function(button) {
+                    if (!button.getAttribute('data-event-attached')) {
+                        button.addEventListener('click', function() {
+                            window.webkit.messageHandlers.buttonClicked.postMessage('Class button clicked!');
+                        });
+                        button.setAttribute('data-event-attached', 'true');
+                        console.log('Event listener added to button:', button);
+                    }
+                });
+            }
+
+            addClickListenerToButtons();
+        });
+        """
+        
+        
+        
+        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        contentController.addUserScript(userScript)
+        
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
         
@@ -30,7 +57,7 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         webView.navigationDelegate = self
         
         view.addSubview(webView)
-
+        
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             webView.rightAnchor.constraint(equalTo: view.rightAnchor),
@@ -38,7 +65,7 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
             webView.leftAnchor.constraint(equalTo: view.leftAnchor)
         ])
     }
-
+    
     func loadWebView(url: URL) {
         let request = URLRequest(url: url)
         webView.load(request)
@@ -49,11 +76,11 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
             loadWebView(url: url)
         }
     }
-
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isInitialLoad = false // 로드 완료 시 초기 로드 상태를 해제
     }
-
+    
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
@@ -67,33 +94,42 @@ class BaseViewController: UIViewController, WKNavigationDelegate {
         }
         
         print("BaseViewController | decidePolicyFor | url: \(url)")
-
+        
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
             print("현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-
+        
         // 차단해야 하는 URL인 경우 -> 차단
         if vcvm.shouldBlockURL(url) {
             print("차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-
+        
         // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
         if vcvm.shouldRefreshURL(url) {
             print("새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
             return
         }
-
+        
         // stack에 push 해야 하는 경우
         print("stack에 push 해야 하는 경우")
         let newVC = GenericViewController(url: url)
         self.navigationController?.pushViewController(newVC, animated: true)
         AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
         decisionHandler(.cancel) // 페이지 이동은 cancel
+    }
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "buttonClicked" {
+            if let messageBody = message.body as? String {
+                print("Received message: \(messageBody)")
+                // 필요한 이벤트 처리
+            }
+        }
     }
 }

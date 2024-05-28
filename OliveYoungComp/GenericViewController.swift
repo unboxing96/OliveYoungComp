@@ -2,10 +2,10 @@ import UIKit
 import WebKit
 
 class GenericViewController: UIViewController, WKNavigationDelegate {
-    var vcvm = ViewControllerViewModel()
     var webView: WKWebView!
     var url: URL?
     var isInitialLoad: Bool = true // 초기 로드를 제어하는 플래그
+    var vcvm = ViewControllerViewModel()
     
     init(url: URL?) {
         self.url = url
