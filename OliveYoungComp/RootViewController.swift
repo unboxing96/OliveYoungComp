@@ -30,10 +30,13 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
                 Array.prototype.forEach.call(buttons, function(button) {
                     if (!button.getAttribute('data-event-attached')) {
                         button.addEventListener('click', function() {
-                            window.webkit.messageHandlers.buttonClicked.postMessage('Class button clicked!');
+                            event.preventDefault(); // 기본 네비게이션 방지
+                            window.webkit.messageHandlers.buttonClicked.postMessage({
+                                action: 'navigate',
+                                url: button.href
+                            });
                         });
                         button.setAttribute('data-event-attached', 'true');
-                        console.log('Event listener added to button:', button);
                     }
                 });
             }
@@ -116,7 +119,6 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
             return
         }
         
-        // stack에 push 해야 하는 경우
         print("stack에 push 해야 하는 경우")
         let newVC = GenericViewController(url: url)
         self.navigationController?.pushViewController(newVC, animated: true)
@@ -125,10 +127,20 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        print("RootViewController | userContentController | didReceive message")
+        print("message.name: \(message.name)")
+        print("message.body: \(message.body)")
+        
         if message.name == "buttonClicked" {
-            if let messageBody = message.body as? String {
-                print("Received message: \(messageBody)")
-                // 필요한 이벤트 처리
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                print("Received navigation message for URL: \(url)")
+                
+                let newVC = GenericViewController(url: url)
+                self.navigationController?.pushViewController(newVC, animated: true)
             }
         }
     }
