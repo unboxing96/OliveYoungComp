@@ -23,32 +23,32 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         let contentController = WKUserContentController()
         contentController.add(self, name: "buttonClicked")
         
-        let jsCode = """
-        window.addEventListener('load', function() {
-            function addClickListenerToButtons() {
-                var buttons = document.getElementsByClassName('BasketButton_basket-button___xAaP');
-                Array.prototype.forEach.call(buttons, function(button) {
-                    if (!button.getAttribute('data-event-attached')) {
-                        button.addEventListener('click', function() {
-                            event.preventDefault(); // 기본 네비게이션 방지
-                            window.webkit.messageHandlers.buttonClicked.postMessage({
-                                action: 'navigate',
-                                url: button.href
-                            });
-                        });
-                        button.setAttribute('data-event-attached', 'true');
-                    }
-                });
-            }
-
-            addClickListenerToButtons();
-        });
-        """
+//        let jsCode = """
+//        window.addEventListener('load', function() {
+//            function addClickListenerToLinks() {
+//                var links = document.getElementsByTagName('a');
+//                Array.prototype.forEach.call(links, function(link) {
+//                    if (!link.getAttribute('data-event-attached')) {
+//                        link.addEventListener('click', function(event) {
+//                            event.preventDefault(); // 기본 네비게이션 방지
+//                            var url = event.currentTarget.href;
+//                            window.webkit.messageHandlers.buttonClicked.postMessage({
+//                                action: 'navigate',
+//                                url: url
+//                            });
+//                        });
+//                        link.setAttribute('data-event-attached', 'true');
+//                    }
+//                });
+//            }
+//
+//            addClickListenerToLinks();
+//        });
+//        """
         
         
-        
-        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        contentController.addUserScript(userScript)
+//        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//        contentController.addUserScript(userScript)
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -100,30 +100,39 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
-            print("현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
+            print("RootViewController | 현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
         
         // 차단해야 하는 URL인 경우 -> 차단
         if vcvm.shouldBlockURL(url) {
-            print("차단해야 하는 URL인 경우")
+            print("RootViewController | 차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
         
         // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
         if vcvm.shouldRefreshURL(url) {
-            print("새로고침 해야 하는 경우(탭바 등)")
+            print("RootViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
             return
         }
         
-        print("stack에 push 해야 하는 경우")
-        let newVC = GenericViewController(url: url)
-        self.navigationController?.pushViewController(newVC, animated: true)
-        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
-        decisionHandler(.cancel) // 페이지 이동은 cancel
+        print("RootViewController | stack에 push 해야 하는 경우")
+        
+        var modifiedURLString = url.absoluteString
+        if !modifiedURLString.hasSuffix("&oy=0") {
+            modifiedURLString += "&oy=0"
+        }
+
+        if let modifiedURL = URL(string: modifiedURLString) {
+            let newVC = GenericViewController(url: modifiedURL)
+            self.navigationController?.pushViewController(newVC, animated: true)
+            AppState.shared.lastLoadedURL = modifiedURL // 마지막 로드된 URL 업데이트
+            decisionHandler(.cancel) // 페이지 이동은 cancel
+            return
+        }
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {

@@ -25,7 +25,7 @@ class ViewControllerViewModel {
         
         let refreshURLs: [String] = [
             "https://m.oliveyoung.co.kr/m/mtn",
-            "https://m.oliveyoung.co.kr/m/mtn?menu=home",
+//            "https://m.oliveyoung.co.kr/m/mtn?menu=home",
             "https://m.oliveyoung.co.kr/m/mtn/shutter?t_page=%EC%85%94%ED%84%B0&t_click=%ED%99%88_%ED%83%AD%EB%B0%94_%EC%85%94%ED%84%B0",
             "https://m.oliveyoung.co.kr/m/mtn/history?tab=recent",
             "https://m.oliveyoung.co.kr/m/mypage/myPageMain.do",

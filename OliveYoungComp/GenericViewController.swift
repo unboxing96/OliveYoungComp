@@ -72,30 +72,38 @@ class GenericViewController: UIViewController, WKNavigationDelegate {
 
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
-            print("현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
+            print("GenericViewController | 현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
 
         // 차단해야 하는 URL인 경우 -> 차단
         if vcvm.shouldBlockURL(url) {
-            print("차단해야 하는 URL인 경우")
+            print("GenericViewController | 차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
 
         // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
         if vcvm.shouldRefreshURL(url) {
-            print("새로고침 해야 하는 경우(탭바 등)")
+            print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
             return
         }
 
         // stack에 push 해야 하는 경우
-        print("stack에 push 해야 하는 경우")
-        let newVC = GenericViewController(url: url)
-        self.navigationController?.pushViewController(newVC, animated: true)
-        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
-        decisionHandler(.cancel) // 페이지 이동은 cancel
+        print("GenericViewController | stack에 push 해야 하는 경우")
+        var modifiedURLString = url.absoluteString
+        if !modifiedURLString.hasSuffix("&oy=0") {
+            modifiedURLString += "&oy=0"
+        }
+
+        if let modifiedURL = URL(string: modifiedURLString) {
+            let newVC = GenericViewController(url: modifiedURL)
+            self.navigationController?.pushViewController(newVC, animated: true)
+            AppState.shared.lastLoadedURL = modifiedURL // 마지막 로드된 URL 업데이트
+            decisionHandler(.cancel) // 페이지 이동은 cancel
+            return
+        }
     }
 }
