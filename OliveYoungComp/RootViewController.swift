@@ -23,32 +23,47 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         let contentController = WKUserContentController()
         contentController.add(self, name: "buttonClicked")
         
-//        let jsCode = """
-//        window.addEventListener('load', function() {
-//            function addClickListenerToLinks() {
-//                var links = document.getElementsByTagName('a');
-//                Array.prototype.forEach.call(links, function(link) {
-//                    if (!link.getAttribute('data-event-attached')) {
-//                        link.addEventListener('click', function(event) {
-//                            event.preventDefault(); // 기본 네비게이션 방지
-//                            var url = event.currentTarget.href;
-//                            window.webkit.messageHandlers.buttonClicked.postMessage({
-//                                action: 'navigate',
-//                                url: url
-//                            });
-//                        });
-//                        link.setAttribute('data-event-attached', 'true');
-//                    }
-//                });
-//            }
-//
-//            addClickListenerToLinks();
-//        });
-//        """
-        
-        
-//        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//        contentController.addUserScript(userScript)
+        let jsCode = """
+        window.addEventListener('load', function() {
+            function addClickListenerToLinks() {
+                var searchButtonClass = 'SearchButton_search-button__R_86C';
+                var basketButtonClass = 'BasketButton_basket-button___xAaP';
+
+                var links = document.getElementsByTagName('a');
+                Array.prototype.forEach.call(links, function(link) {
+                    var linkClass = link.className;
+                    var linkId = link.id;
+                    
+                    if (!link.getAttribute('data-event-attached') &&
+                        (linkClass.includes(searchButtonClass) ||
+                         linkClass.includes(basketButtonClass))) {
+                        link.addEventListener('click', function(event) {
+                            event.preventDefault(); // 기본 네비게이션 방지
+                            var url = event.currentTarget.href;
+                            window.webkit.messageHandlers.buttonClicked.postMessage({
+                                action: 'navigate',
+                                url: url
+                            });
+                        });
+                        link.setAttribute('data-event-attached', 'true');
+                    }
+                });
+            }
+
+            addClickListenerToLinks();
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length > 0) {
+                        addClickListenerToLinks();
+                    }
+                });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+        """
+
+        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        contentController.addUserScript(userScript)
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -116,6 +131,7 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         if vcvm.shouldRefreshURL(url) {
             print("RootViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
+//            clearStack()
             return
         }
         
@@ -151,6 +167,13 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
             }
+        }
+    }
+    
+    @objc func clearStackAndLoadURL(url: URL) {
+        if let navigationController = self.navigationController {
+            let newRootViewController = RootViewController(url: url)
+            navigationController.setViewControllers([newRootViewController], animated: false)
         }
     }
 }

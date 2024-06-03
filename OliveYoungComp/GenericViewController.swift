@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-class GenericViewController: UIViewController, WKNavigationDelegate {
+class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
     var webView: WKWebView!
     var url: URL?
     var isInitialLoad: Bool = true // 초기 로드를 제어하는 플래그
@@ -28,6 +28,51 @@ class GenericViewController: UIViewController, WKNavigationDelegate {
 
     func configureWebView() {
         let contentController = WKUserContentController()
+        contentController.add(self, name: "buttonClicked")
+        
+        let jsCode = """
+        window.addEventListener('load', function() {
+            function addClickListenerToLinks() {
+                var searchButtonClass = 'SearchButton_search-button__R_86C';
+                var basketButtonClass = 'BasketButton_basket-button___xAaP';
+
+                var links = document.getElementsByTagName('a');
+                Array.prototype.forEach.call(links, function(link) {
+                    var linkClass = link.className;
+                    var linkId = link.id;
+                    
+                    if (!link.getAttribute('data-event-attached') &&
+                        (linkClass.includes(searchButtonClass) ||
+                         linkClass.includes(basketButtonClass))) {
+                        link.addEventListener('click', function(event) {
+                            event.preventDefault(); // 기본 네비게이션 방지
+                            var url = event.currentTarget.href;
+                            window.webkit.messageHandlers.buttonClicked.postMessage({
+                                action: 'navigate',
+                                url: url
+                            });
+                        });
+                        link.setAttribute('data-event-attached', 'true');
+                    }
+                });
+            }
+
+            addClickListenerToLinks();
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length > 0) {
+                        addClickListenerToLinks();
+                    }
+                });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+        """
+
+    
+        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        contentController.addUserScript(userScript)
+        
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
         
@@ -88,6 +133,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate {
         if vcvm.shouldRefreshURL(url) {
             print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
+//            clearStack()
             return
         }
 
@@ -104,6 +150,32 @@ class GenericViewController: UIViewController, WKNavigationDelegate {
             AppState.shared.lastLoadedURL = modifiedURL // 마지막 로드된 URL 업데이트
             decisionHandler(.cancel) // 페이지 이동은 cancel
             return
+        }
+    }
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        print("RootViewController | userContentController | didReceive message")
+        print("message.name: \(message.name)")
+        print("message.body: \(message.body)")
+        
+        if message.name == "buttonClicked" {
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                print("Received navigation message for URL: \(url)")
+                
+                let newVC = GenericViewController(url: url)
+                self.navigationController?.pushViewController(newVC, animated: true)
+            }
+        }
+    }
+    
+    @objc func clearStack() {
+        if let navigationController = self.navigationController {
+            let newRootViewController = RootViewController()
+            navigationController.setViewControllers([newRootViewController], animated: false)
         }
     }
 }
