@@ -126,7 +126,7 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
             decisionHandler(.cancel)
             return
         }
-        
+    
         // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
         if vcvm.shouldRefreshURL(url) {
             print("RootViewController | 새로고침 해야 하는 경우(탭바 등)")
@@ -166,13 +166,6 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
             }
-        }
-    }
-    
-    @objc func clearStackAndLoadURL(url: URL) {
-        if let navigationController = self.navigationController {
-            let newRootViewController = RootViewController()
-            navigationController.setViewControllers([newRootViewController], animated: false)
         }
     }
 }

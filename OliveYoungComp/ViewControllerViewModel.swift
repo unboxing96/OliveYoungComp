@@ -36,4 +36,9 @@ class ViewControllerViewModel {
         ]
         return refreshURLs.contains(url.absoluteString)
     }
+    
+//    func navigateFromCartToHome(_ url: URL) -> Bool {
+//        print("ViewControllerViewModel | navigateFromCartToHome")
+//        return url.absoluteString == "https://m.oliveyoung.co.kr/m/mtn?menu=home&t_page=%EC%9E%A5%EB%B0%94%EA%B5%AC%EB%8B%88_%EC%9D%BC%EB%B0%98%EB%B0%B0%EC%86%A1&t_click=%ED%99%88%EC%95%84%EC%9D%B4%EC%BD%98"
+//    }
 }

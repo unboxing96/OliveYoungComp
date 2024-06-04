@@ -170,11 +170,4 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             }
         }
     }
-    
-    @objc func clearStack() {
-        if let navigationController = self.navigationController {
-            let newRootViewController = RootViewController()
-            navigationController.setViewControllers([newRootViewController], animated: false)
-        }
-    }
 }
