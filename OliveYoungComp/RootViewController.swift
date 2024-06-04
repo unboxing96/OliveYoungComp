@@ -131,7 +131,6 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         if vcvm.shouldRefreshURL(url) {
             print("RootViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
-//            clearStack()
             return
         }
         
@@ -172,7 +171,7 @@ class RootViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
     
     @objc func clearStackAndLoadURL(url: URL) {
         if let navigationController = self.navigationController {
-            let newRootViewController = RootViewController(url: url)
+            let newRootViewController = RootViewController()
             navigationController.setViewControllers([newRootViewController], animated: false)
         }
     }

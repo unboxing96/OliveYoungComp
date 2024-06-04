@@ -133,7 +133,6 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         if vcvm.shouldRefreshURL(url) {
             print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
-//            clearStack()
             return
         }
 
