@@ -11,11 +11,11 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         self.url = url
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureWebView()
@@ -25,22 +25,23 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             print("URL is nil")
         }
     }
-
+    
     func configureWebView() {
         let contentController = WKUserContentController()
         contentController.add(self, name: "buttonClicked")
+        contentController.add(self, name: "historyChanged")
         
         let jsCode = """
         window.addEventListener('load', function() {
             function addClickListenerToLinks() {
                 var searchButtonClass = 'SearchButton_search-button__R_86C';
                 var basketButtonClass = 'BasketButton_basket-button___xAaP';
-
+        
                 var links = document.getElementsByTagName('a');
                 Array.prototype.forEach.call(links, function(link) {
                     var linkClass = link.className;
                     var linkId = link.id;
-                    
+        
                     if (!link.getAttribute('data-event-attached') &&
                         (linkClass.includes(searchButtonClass) ||
                          linkClass.includes(basketButtonClass))) {
@@ -56,7 +57,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                     }
                 });
             }
-
+        
             addClickListenerToLinks();
             var observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
@@ -68,10 +69,28 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             observer.observe(document.body, { childList: true, subtree: true });
         });
         """
+        
+        let historyJsCode = """
+        (function(history){
+            var pushState = history.pushState;
 
-    
+            history.pushState = function(state, title, url) {
+                console.log('pushState called with URL:', url); // 로그 추가
+                var result = pushState.apply(history, arguments);
+                window.webkit.messageHandlers.historyChanged.postMessage({
+                    action: 'navigate',
+                    type: 'pushState',  // 이벤트 타입 추가
+                    url: location.href
+                });
+                return result;
+            };
+        })(window.history);
+        """
+
         let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         contentController.addUserScript(userScript)
+        contentController.addUserScript(historyUserScript)
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -83,7 +102,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         webView.navigationDelegate = self
         
         view.addSubview(webView)
-
+        
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             webView.rightAnchor.constraint(equalTo: view.rightAnchor),
@@ -91,16 +110,16 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             webView.leftAnchor.constraint(equalTo: view.leftAnchor)
         ])
     }
-
+    
     func loadWebView(url: URL) {
         let request = URLRequest(url: url)
         webView.load(request)
     }
-
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isInitialLoad = false // 로드 완료 시 초기 로드 상태를 해제
     }
-
+    
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
@@ -114,35 +133,35 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         }
         
         print("GenericViewController | decidePolicyFor | url: \(url)")
-
+        
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
             print("GenericViewController | 현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-
+        
         // 차단해야 하는 URL인 경우 -> 차단
         if vcvm.shouldBlockURL(url) {
             print("GenericViewController | 차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-
+        
         // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
         if vcvm.shouldRefreshURL(url) {
             print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
             decisionHandler(.allow)
             return
         }
-
+        
         // stack에 push 해야 하는 경우
         print("GenericViewController | stack에 push 해야 하는 경우")
         var modifiedURLString = url.absoluteString
         if !modifiedURLString.hasSuffix("&oy=0") {
             modifiedURLString += "&oy=0"
         }
-
+        
         if let modifiedURL = URL(string: modifiedURLString) {
             let newVC = GenericViewController(url: modifiedURL)
             self.navigationController?.pushViewController(newVC, animated: true)
@@ -157,17 +176,24 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         print("message.name: \(message.name)")
         print("message.body: \(message.body)")
         
-        if message.name == "buttonClicked" {
+        if message.name == "buttonClicked" || message.name == "historyChanged" {
             if let messageBody = message.body as? [String: Any],
                let action = messageBody["action"] as? String,
                action == "navigate",
                let urlString = messageBody["url"] as? String,
                let url = URL(string: urlString) {
-                print("Received navigation message for URL: \(url)")
+                print("Received navigation message for URL: ")
                 
+                // 무한 루프 방지
+                if webView.url?.absoluteString == url.absoluteString {
+                    print("Same URL, ignoring navigation to prevent loop: ")
+                    return
+                }
+
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
             }
         }
     }
+
 }
