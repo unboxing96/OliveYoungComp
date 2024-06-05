@@ -22,16 +22,17 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         if let url = url {
             loadWebView(url: url)
         } else {
-            print("URL is nil")
+            loadInitialWebView()
         }
     }
     
     func configureWebView() {
         let contentController = WKUserContentController()
-        contentController.add(self, name: "buttonClicked")
-        contentController.add(self, name: "historyChanged")
+        contentController.add(self, name: "navigationBarButtonHandler")
+        contentController.add(self, name: "historyHandler")
+        contentController.add(self, name: "fetchHandler")
         
-        let jsCode = """
+        let navigationBarButtonJsCode = """
         window.addEventListener('load', function() {
             function addClickListenerToLinks() {
                 var searchButtonClass = 'SearchButton_search-button__R_86C';
@@ -48,7 +49,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                         link.addEventListener('click', function(event) {
                             event.preventDefault(); // 기본 네비게이션 방지
                             var url = event.currentTarget.href;
-                            window.webkit.messageHandlers.buttonClicked.postMessage({
+                            window.webkit.messageHandlers.navigationBarButtonHandler.postMessage({
                                 action: 'navigate',
                                 url: url
                             });
@@ -77,20 +78,41 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             history.pushState = function(state, title, url) {
                 console.log('pushState called with URL:', url); // 로그 추가
                 var result = pushState.apply(history, arguments);
-                window.webkit.messageHandlers.historyChanged.postMessage({
+                window.webkit.messageHandlers.historyHandler.postMessage({
                     action: 'navigate',
                     type: 'pushState',  // 이벤트 타입 추가
                     url: location.href
                 });
-                return result;
+                return;
             };
         })(window.history);
         """
+        
+        let fetchJsCode = """
+        (function() {
+            var originalFetch = window.fetch;
+            window.fetch = function() {
+                return originalFetch.apply(this, arguments).then(function(response) {
+                    var clonedResponse = response.clone();
+                    clonedResponse.json().then(function(data) {
+                        window.webkit.messageHandlers.fetchHandler.postMessage({
+                            url: clonedResponse.url,
+                            data: JSON.stringify(data)
+                        });
+                    });
+                    return response;
+                });
+            };
+        })();
+        """
 
-        let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        contentController.addUserScript(userScript)
-        contentController.addUserScript(historyUserScript)
+        let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        
+        contentController.addUserScript(navigationBarButtonUserScript)
+//        contentController.addUserScript(historyUserScript)
+//        contentController.addUserScript(fetchUserScript)
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -114,6 +136,12 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     func loadWebView(url: URL) {
         let request = URLRequest(url: url)
         webView.load(request)
+    }
+    
+    func loadInitialWebView() {
+        if let url = URL(string: "https://m.oliveyoung.co.kr/m/mtn") {
+            loadWebView(url: url)
+        }
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -172,28 +200,32 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print("RootViewController | userContentController | didReceive message")
+        print("GenericViewController | userContentController | didReceive message")
         print("message.name: \(message.name)")
         print("message.body: \(message.body)")
         
-        if message.name == "buttonClicked" || message.name == "historyChanged" {
+        switch message.name {
+        case "navigationBarButtonHandler", "historyHandler":
             if let messageBody = message.body as? [String: Any],
                let action = messageBody["action"] as? String,
                action == "navigate",
                let urlString = messageBody["url"] as? String,
                let url = URL(string: urlString) {
-                print("Received navigation message for URL: ")
-                
-                // 무한 루프 방지
-                if webView.url?.absoluteString == url.absoluteString {
-                    print("Same URL, ignoring navigation to prevent loop: ")
-                    return
-                }
+                print("Received navigation message for URL: \(url)")
 
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
             }
+        case "fetchHandler":
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                    print("Received navigation message for URL: \(url)")
+            }
+        default:
+            break
         }
     }
-
 }
