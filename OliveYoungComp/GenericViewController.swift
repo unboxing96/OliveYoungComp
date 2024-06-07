@@ -29,6 +29,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     func configureWebView() {
         let contentController = WKUserContentController()
         contentController.add(self, name: "navigationBarButtonHandler")
+        contentController.add(self, name: "reactPropsHandler")
         contentController.add(self, name: "historyHandler")
         contentController.add(self, name: "fetchHandler")
         
@@ -71,6 +72,67 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         });
         """
         
+        let addClickListenerToReactProps = """
+        window.addEventListener('load', function() {
+            function addClickListenerToLinks() {
+                var links = document.getElementsByTagName('a');
+                Array.prototype.forEach.call(links, function(link) {
+                    if (!link.getAttribute('data-event-attached-react-props')) {
+                        link.addEventListener('click', function(event) {
+                            event.preventDefault(); // 기본 네비게이션 방지
+
+                            console.log('Click event triggered');
+                            var element = event.target;
+                            var contentsUrl = null;
+
+                            // Try to find contentsUrl in the event target's dataset
+                            if (element.dataset.contentsurl) {
+                                contentsUrl = element.dataset.contentsurl;
+                                console.log('Found contentsUrl in dataset:', contentsUrl);
+                            } else {
+                                // Traverse up the DOM tree to find the dataset contentsurl
+                                while (element) {
+                                    if (element.dataset && element.dataset.contentsurl) {
+                                        contentsUrl = element.dataset.contentsurl;
+                                        console.log('Found contentsUrl in ancestor dataset:', contentsUrl);
+                                        break;
+                                    }
+                                    element = element.parentElement;
+                                }
+                            }
+
+                            if (contentsUrl) {
+                                window.webkit.messageHandlers.reactPropsHandler.postMessage({
+                                    action: 'navigate',
+                                    url: contentsUrl
+                                });
+                            } else {
+                                var url = event.currentTarget.href;
+                                window.webkit.messageHandlers.reactPropsHandler.postMessage({
+                                    action: 'navigate',
+                                    url: url
+                                });
+                            }
+                        });
+                        link.setAttribute('data-event-attached-react-props', 'true');
+                    }
+                });
+            }
+
+            addClickListenerToLinks();
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length > 0) {
+                        addClickListenerToLinks();
+                    }
+                });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+        """
+
+
+        
         let historyJsCode = """
         (function(history){
             var pushState = history.pushState;
@@ -90,6 +152,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         
         let fetchJsCode = """
         (function() {
+            // Capture fetch requests
             var originalFetch = window.fetch;
             window.fetch = function() {
                 return originalFetch.apply(this, arguments).then(function(response) {
@@ -97,22 +160,38 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                     clonedResponse.json().then(function(data) {
                         window.webkit.messageHandlers.fetchHandler.postMessage({
                             url: clonedResponse.url,
-                            data: JSON.stringify(data)
+                            data: data
                         });
                     });
                     return response;
                 });
             };
+
+            // Capture XMLHttpRequest requests
+            var originalXHR = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                this.addEventListener('load', function() {
+                    if (this.responseType === '' || this.responseType === 'json') {
+                        window.webkit.messageHandlers.fetchHandler.postMessage({
+                            url: url,
+                            data: this.responseText
+                        });
+                    }
+                });
+                originalXHR.apply(this, arguments);
+            };
         })();
         """
 
         let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         
         contentController.addUserScript(navigationBarButtonUserScript)
-//        contentController.addUserScript(historyUserScript)
-//        contentController.addUserScript(fetchUserScript)
+        contentController.addUserScript(addClickListenerToReactPropsScript)
+    //    contentController.addUserScript(historyUserScript)
+    //    contentController.addUserScript(fetchUserScript)
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -176,12 +255,12 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             return
         }
         
-        // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
-        if vcvm.shouldRefreshURL(url) {
-            print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
-            decisionHandler(.allow)
-            return
-        }
+//        // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
+//        if vcvm.shouldRefreshURL(url) {
+//            print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
+//            decisionHandler(.allow)
+//            return
+//        }
         
         // stack에 push 해야 하는 경우
         print("GenericViewController | stack에 push 해야 하는 경우")
@@ -205,7 +284,29 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         print("message.body: \(message.body)")
         
         switch message.name {
-        case "navigationBarButtonHandler", "historyHandler":
+        case "navigationBarButtonHandler":
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                print("Received navigation message for URL: \(url)")
+
+                let newVC = GenericViewController(url: url)
+                self.navigationController?.pushViewController(newVC, animated: true)
+            }
+        case "reactPropsHandler":
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                print("Received navigation message for URL: \(url)")
+
+                let newVC = GenericViewController(url: url)
+                self.navigationController?.pushViewController(newVC, animated: true)
+            }
+        case "historyHandler":
             if let messageBody = message.body as? [String: Any],
                let action = messageBody["action"] as? String,
                action == "navigate",
