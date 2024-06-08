@@ -272,24 +272,13 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
 //            return
 //        }
         
-//        // stack에 push 해야 하는 경우
-//        print("GenericViewController | stack에 push 해야 하는 경우")
-//        var modifiedURLString = url.absoluteString
-//        if !modifiedURLString.hasSuffix("&oy=0") {
-//            modifiedURLString += "&oy=0"
-//        }
-//        
-//        if let modifiedURL = URL(string: modifiedURLString) {
-//            let newVC = GenericViewController(url: modifiedURL)
-//            self.navigationController?.pushViewController(newVC, animated: true)
-//            AppState.shared.lastLoadedURL = modifiedURL // 마지막 로드된 URL 업데이트
-//            decisionHandler(.cancel) // 페이지 이동은 cancel
-//            return
-//        }
+        // stack에 push 해야 하는 경우
+        print("GenericViewController | stack에 push 해야 하는 경우")
         
-        let newVC = GenericViewController(url: url)
+        let modifiedURL = vcvm.addSuffixToMainBanner(url)
+        let newVC = GenericViewController(url: modifiedURL)
         self.navigationController?.pushViewController(newVC, animated: true)
-        AppState.shared.lastLoadedURL = url // 마지막 로드된 URL 업데이트
+        AppState.shared.lastLoadedURL = modifiedURL // 마지막 로드된 URL 업데이트
         decisionHandler(.cancel) // 페이지 이동은 cancel
         return
     }

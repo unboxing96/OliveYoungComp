@@ -41,4 +41,15 @@ class ViewControllerViewModel {
 //        print("ViewControllerViewModel | navigateFromCartToHome")
 //        return url.absoluteString == "https://m.oliveyoung.co.kr/m/mtn?menu=home&t_page=%EC%9E%A5%EB%B0%94%EA%B5%AC%EB%8B%88_%EC%9D%BC%EB%B0%98%EB%B0%B0%EC%86%A1&t_click=%ED%99%88%EC%95%84%EC%9D%B4%EC%BD%98"
 //    }
+    
+    func addSuffixToMainBanner(_ url: URL) -> URL {
+        var modifiedURLString = url.absoluteString
+        if url.absoluteString.contains("getPlanShopDetail") {
+            if !modifiedURLString.hasSuffix("&oy=0") {
+                modifiedURLString += "&oy=0"
+            }
+        }
+        
+        return URL(string: modifiedURLString) ?? url
+    }
 }
