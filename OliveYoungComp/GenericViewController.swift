@@ -42,6 +42,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         contentController.add(self, name: "reactPropsHandler")
         contentController.add(self, name: "historyHandler")
         contentController.add(self, name: "fetchHandler")
+        contentController.add(self, name: "navigationHandler") // 추가
         
         let navigationBarButtonJsCode = """
         window.addEventListener('load', function() {
@@ -192,16 +193,48 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             };
         })();
         """
+        
+        let nextJsNavigationHandler = """
+        (function() {
+            const handleRouteChange = (url, { shallow }) => {
+                if (shallow || url.includes('t_click=GNB')) return;
+
+                const fullUrl = 'https://m.oliveyoung.co.kr' + url;
+                window.webkit.messageHandlers.navigationHandler.postMessage({
+                    action: 'navigate',
+                    url: fullUrl
+                });
+
+                // 기본 네비게이션 이동 방지
+                window.next.router.events.emit('routeChangeError');
+                throw 'routeChange aborted.';
+            };
+
+            if (window.next && window.next.router) {
+                window.next.router.events.on('routeChangeStart', (url, options) => {
+                    handleRouteChange(url, options);
+                });
+
+                window.addEventListener('beforeunload', function() {
+                    window.next.router.events.off('routeChangeStart', handleRouteChange);
+                });
+            }
+        })();
+        """
 
         let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let nextJsNavigationHandlerUserScript = WKUserScript(source: nextJsNavigationHandler, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+
         
         contentController.addUserScript(navigationBarButtonUserScript)
 //        contentController.addUserScript(addClickListenerToReactPropsScript)
     //    contentController.addUserScript(historyUserScript)
     //    contentController.addUserScript(fetchUserScript)
+        contentController.addUserScript(nextJsNavigationHandlerUserScript)
+
         
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
@@ -329,6 +362,22 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                let urlString = messageBody["url"] as? String,
                let url = URL(string: urlString) {
                     print("Received navigation message for URL: \(url)")
+            }
+        case "navigationHandler": // 추가
+            if let messageBody = message.body as? [String: Any],
+               let action = messageBody["action"] as? String,
+               action == "navigate",
+               let urlString = messageBody["url"] as? String,
+               let url = URL(string: urlString) {
+                print("Received navigation message for URL: \(url)")
+                
+                if isInitialLoad {
+                    print("Initial load - ignoring navigation request")
+                    return
+                }
+
+                let newVC = GenericViewController(url: url)
+                self.navigationController?.pushViewController(newVC, animated: true)
             }
         default:
             break
