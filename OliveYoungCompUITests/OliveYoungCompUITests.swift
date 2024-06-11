@@ -128,6 +128,62 @@ final class OliveYoungCompUITests: XCTestCase {
         goBack(in: app)
         waitForNewPage(in: webView)
     }
+    
+    func testScenarioThird() throws {
+        // UI tests must launch the application that they test.
+        let app = XCUIApplication()
+        app.launch()
+
+        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let webView = app.webViews.firstMatch
+        
+        // 새 페이지 로드 대기
+        XCTAssertTrue(webView.waitForExistence(timeout: 20), "웹뷰가 존재하지 않습니다.")
+        
+        // 팝업창 제거
+        let dailyPopUpButton = webView.buttons["오늘 하루 보지 않기"]
+        if dailyPopUpButton.exists {
+            dailyPopUpButton.tap()
+        }
+        
+        // 1. 검색창 클릭
+        tapCoordinateByRelative(in: webView, x: 0.85, y: 0.05)
+        waitForNewPage(in: webView)
+        
+        // 2. 브링그린 검색
+        let textField = webView.textFields["상품, 브랜드, 성분 검색"]
+        XCTAssertTrue(textField.waitForExistence(timeout: 20), "텍스트 필드가 존재하지 않습니다.")
+        textField.tap()
+        textField.typeText("브링그린")
+        tapCoordinateByRelative(in: webView, x: 0.9, y: 0.1)
+        waitForNewPage(in: webView)
+        
+        doScroll(in: webView, startDy: 0.5, endDy: 0.45)
+        
+        // 3. 첫 번째 게시글
+        tapCoordinateByRelative(in: webView, x: 0.3, y: 0.3)
+        waitForNewPage(in: webView)
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)
+        
+        // 3. 두 번째 게시글
+        tapCoordinateByRelative(in: webView, x: 0.7, y: 0.3)
+        waitForNewPage(in: webView)
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)
+        
+        // 3. 세 번째 게시글
+        tapCoordinateByRelative(in: webView, x: 0.3, y: 0.7)
+        waitForNewPage(in: webView)
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)
+            
+        goBack(in: app)
+        waitForNewPage(in: webView)
+    }
 
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
