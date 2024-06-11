@@ -40,7 +40,7 @@ final class OliveYoungCompUITests: XCTestCase {
         }
         
         scrollToElement(in: webView, targetText: "카테고리 랭킹")
-        doShortScroll(in: webView)
+        doScroll(in: webView, startDy: 0.5, endDy: 0.4)
         waitForNewPage(in: webView)
         
         tapButtonByText(in: webView, text: "클렌징")
@@ -82,9 +82,51 @@ final class OliveYoungCompUITests: XCTestCase {
         }
         
         // Shutter로 이동
-        tapCoordinateByRelative(in: app, x: 0.5, y: 0.95)
+        tapCoordinateByRelative(in: app, x: 0.3, y: 0.95)
         waitForNewPage(in: webView)
-
+        
+        // 1. 요즘 인기있는 -> 첫 번째 셔터 게시글 클릭
+        tapCoordinateByRelative(in: webView, x: 0.1, y: 0.4)
+        waitForNewPage(in: webView)
+        
+        // 2. 관련된 첫 번째 제품 클릭
+        tapCoordinateByRelative(in: webView, x: 0.1, y: 0.8)
+        waitForNewPage(in: webView)
+        
+        // 리뷰 탭 클릭
+        tapLinkByText(in: webView, text: "리뷰 999+")
+        waitForNewPage(in: webView)
+        
+        // 3. 두 번째 셔터 게시글 클릭
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.7)
+        waitForNewPage(in: webView)
+        
+        // 4. 관련된 첫 번째 제품 클릭
+        tapCoordinateByRelative(in: webView, x: 0.1, y: 0.8)
+        waitForNewPage(in: webView)
+        
+        // 리뷰 탭 클릭
+        tapLinkByText(in: webView, text: "리뷰 999+")
+        waitForNewPage(in: webView)
+        
+        // 5. 두 번째 셔터 게시글 클릭
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.7)
+        waitForNewPage(in: webView)
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)   
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)  
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)
+        
+        goBack(in: app)
+        waitForNewPage(in: webView) 
+        
+        goBack(in: app)
+        waitForNewPage(in: webView)
     }
 
     func testLaunchPerformance() throws {
@@ -124,22 +166,20 @@ extension XCTestCase {
         }
     }
     
-    func doShortScroll(in context: XCUIElement) {
+    func doScroll(in context: XCUIElement, startDy: CGFloat, endDy: CGFloat) {
         // 스크롤 길이를 더 세밀하게 조절
-        let smallStartCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let smallEndCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        let smallStartCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: startDy))
+        let smallEndCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: endDy))
         smallStartCoordinate.press(forDuration: 0.1, thenDragTo: smallEndCoordinate)
     }    
-    
-    func doLongScroll(in context: XCUIElement) {
-        // 스크롤 길이를 더 세밀하게 조절
-        let smallStartCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let smallEndCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
-        smallStartCoordinate.press(forDuration: 0.1, thenDragTo: smallEndCoordinate)
-    }
+
     
     func tapButtonByText(in context: XCUIElement, text: String) {
         context.buttons[text].tap()
+    }
+    
+    func tapLinkByText(in context: XCUIElement, text: String) {
+        context.links[text].tap()
     }
     
     func waitForNewPage(in context: XCUIElement) {
