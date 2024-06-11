@@ -22,7 +22,7 @@ final class OliveYoungCompUITests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
+    func testScenarioFirst() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
@@ -41,21 +41,50 @@ final class OliveYoungCompUITests: XCTestCase {
         
         scrollToElement(in: webView, targetText: "카테고리 랭킹")
         doShortScroll(in: webView)
+        waitForNewPage(in: webView)
         
         tapButtonByText(in: webView, text: "클렌징")
         
         tapCoordinateByRelative(in: webView, x: 0.5, y: 0.3)
         waitForNewPage(in: webView)
-        
-        tapCoordinateByRelative(in: webView, x: 0, y: 0)
-        waitForNewPage(in: webView)
-        
-        
-        waitForNewPage(in: webView)
+            
         goBack(in: app)
+        waitForNewPage(in: webView)
         
-//        tapCoordinate(in: webView, x: 0.5, y: 0.5)
-//        tapCoordinate(in: webView, x: 0.5, y: 0.7)
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.5)
+        waitForNewPage(in: webView)
+            
+        goBack(in: app)
+        waitForNewPage(in: webView)
+        
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.7)
+        waitForNewPage(in: webView)
+            
+        goBack(in: app)
+        waitForNewPage(in: webView)
+    }
+    
+    func testScenarioSecond() throws {
+        // UI tests must launch the application that they test.
+        let app = XCUIApplication()
+        app.launch()
+
+        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let webView = app.webViews.firstMatch
+        
+        // 새 페이지 로드 대기
+        XCTAssertTrue(webView.waitForExistence(timeout: 20), "웹뷰가 존재하지 않습니다.")
+        
+        // 팝업창 제거
+        let dailyPopUpButton = webView.buttons["오늘 하루 보지 않기"]
+        if dailyPopUpButton.exists {
+            dailyPopUpButton.tap()
+        }
+        
+        // Shutter로 이동
+        tapCoordinateByRelative(in: app, x: 0.5, y: 0.95)
+        waitForNewPage(in: webView)
+
     }
 
     func testLaunchPerformance() throws {
@@ -69,48 +98,56 @@ final class OliveYoungCompUITests: XCTestCase {
 }
 
 extension XCTestCase {
-    func tapCoordinateByAbsolute(in webView: XCUIElement, x: CGFloat, y: CGFloat) {
-        let normalizedX = x / webView.frame.width
-        let normalizedY = y / webView.frame.height
-        let coordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
+    func tapCoordinateByAbsolute(in context: XCUIElement, x: CGFloat, y: CGFloat) {
+        let normalizedX = x / context.frame.width
+        let normalizedY = y / context.frame.height
+        let coordinate = context.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.tap()
     }
     
-    func tapCoordinateByRelative(in webView: XCUIElement, x: CGFloat, y: CGFloat) {
-        let coordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: x, dy: y))
+    func tapCoordinateByRelative(in context: XCUIElement, x: CGFloat, y: CGFloat) {
+        let coordinate = context.coordinate(withNormalizedOffset: CGVector(dx: x, dy: y))
         coordinate.tap()
     }
     
-    func scrollToElement(in webView: XCUIElement, targetText: String) {
-        let elementToScrollTo = webView.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", targetText)).firstMatch
+    func scrollToElement(in context: XCUIElement, targetText: String) {
+        let elementToScrollTo = context.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", targetText)).firstMatch
 
         // 스크롤하여 요소가 보이게 하기
         let maxScrolls = 10
         var count = 0
         
         while !elementToScrollTo.exists && count < maxScrolls {
-            webView.swipeUp()
+            print("count: \(count)")
+            context.swipeUp()
             count += 1
         }
     }
     
-    func doShortScroll(in webView: XCUIElement) {
+    func doShortScroll(in context: XCUIElement) {
         // 스크롤 길이를 더 세밀하게 조절
-        let smallStartCoordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let smallEndCoordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        let smallStartCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let smallEndCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        smallStartCoordinate.press(forDuration: 0.1, thenDragTo: smallEndCoordinate)
+    }    
+    
+    func doLongScroll(in context: XCUIElement) {
+        // 스크롤 길이를 더 세밀하게 조절
+        let smallStartCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let smallEndCoordinate = context.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
         smallStartCoordinate.press(forDuration: 0.1, thenDragTo: smallEndCoordinate)
     }
     
-    func tapButtonByText(in webView: XCUIElement, text: String) {
-        webView.buttons[text].tap()
+    func tapButtonByText(in context: XCUIElement, text: String) {
+        context.buttons[text].tap()
     }
     
-    func waitForNewPage(in webView: XCUIElement) {
-        XCTAssertTrue(webView.waitForExistence(timeout: 20), "웹뷰가 존재하지 않습니다.")
+    func waitForNewPage(in context: XCUIElement) {
+        XCTAssertTrue(context.waitForExistence(timeout: 20), "웹뷰가 존재하지 않습니다.")
     }
     
-    func goBack(in app: XCUIApplication) {
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+    func goBack(in context: XCUIApplication) {
+        context.navigationBars.buttons.element(boundBy: 0).tap()
     }
 }
 
