@@ -2,7 +2,7 @@
 //  OliveYoungCompUITests.swift
 //  OliveYoungCompUITests
 //
-//  Created by 김태현 on 5/12/24.
+//  Created by 김태현 on 6/11/24.
 //
 
 import XCTest
@@ -28,6 +28,33 @@ final class OliveYoungCompUITests: XCTestCase {
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let webView = app.webViews.firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: 20), "웹뷰가 존재하지 않습니다.")
+        
+        let dailyPopUpButton = webView.buttons["오늘 하루 보지 않기"]
+        if dailyPopUpButton.exists {
+            dailyPopUpButton.tap()
+        }
+
+        // '오특' 텍스트를 가진 버튼 찾기
+        let todaySpecialButton = webView.buttons["오특"]
+        XCTAssertTrue(todaySpecialButton.waitForExistence(timeout: 20), "오특 버튼이 존재하지 않습니다.")
+        
+        // 버튼 클릭
+        todaySpecialButton.tap()
+
+        // 새 페이지 로드 대기
+        let newWebView = app.webViews.firstMatch
+        XCTAssertTrue(newWebView.waitForExistence(timeout: 20), "새 페이지의 웹뷰가 존재하지 않습니다.")
+
+        // 좌표값으로 tap
+        let coordinate = newWebView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        coordinate.tap()
+                
+        // 새 페이지 로드 대기
+        let newNewWebView = app.webViews.firstMatch
+        XCTAssertTrue(newNewWebView.waitForExistence(timeout: 20), "새 페이지의 웹뷰가 존재하지 않습니다.")
+        
     }
 
     func testLaunchPerformance() throws {

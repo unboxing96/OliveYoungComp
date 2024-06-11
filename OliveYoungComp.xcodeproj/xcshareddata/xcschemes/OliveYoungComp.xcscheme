@@ -45,7 +45,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E350DDB82BF05AF0007362E3"
+               BlueprintIdentifier = "E38E86B22C1760B5002D465C"
                BuildableName = "OliveYoungCompUITests.xctest"
                BlueprintName = "OliveYoungCompUITests"
                ReferencedContainer = "container:OliveYoungComp.xcodeproj">

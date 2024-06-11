@@ -2,7 +2,7 @@
 //  OliveYoungCompUITestsLaunchTests.swift
 //  OliveYoungCompUITests
 //
-//  Created by 김태현 on 5/12/24.
+//  Created by 김태현 on 6/11/24.
 //
 
 import XCTest
