@@ -197,7 +197,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         let nextJsNavigationHandler = """
         (function() {
             const handleRouteChange = (url, { shallow }) => {
-                if (shallow || url.includes('t_click=GNB')) return;
+                if (shallow || url.includes('t_click=GNB') || url.includes('history')) return;
 
                 const fullUrl = 'https://m.oliveyoung.co.kr' + url;
                 window.webkit.messageHandlers.navigationHandler.postMessage({
@@ -221,6 +221,8 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             }
         })();
         """
+
+
  
         let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
