@@ -225,9 +225,9 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
 
  
         let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//        let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//        let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//        let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         let nextJsNavigationHandlerUserScript = WKUserScript(source: nextJsNavigationHandler, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
 
         

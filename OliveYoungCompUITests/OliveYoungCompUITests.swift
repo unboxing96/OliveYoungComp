@@ -38,12 +38,14 @@ final class OliveYoungCompUITests: XCTestCase {
         if dailyPopUpButton.exists {
             dailyPopUpButton.tap()
         }
+        waitForNewPage(in: webView)
         
         scrollToElement(in: webView, targetText: "카테고리 랭킹")
-        doScroll(in: webView, startDy: 0.5, endDy: 0.4)
+        doScroll(in: webView, startDy: 0.5, endDy: 0.45)
         waitForNewPage(in: webView)
         
         tapButtonByText(in: webView, text: "클렌징")
+        waitForNewPage(in: webView)
         
         tapCoordinateByRelative(in: webView, x: 0.5, y: 0.3)
         waitForNewPage(in: webView)
@@ -98,7 +100,7 @@ final class OliveYoungCompUITests: XCTestCase {
         waitForNewPage(in: webView)
         
         // 3. 두 번째 셔터 게시글 클릭
-        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.7)
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.77)
         waitForNewPage(in: webView)
         
         // 4. 관련된 첫 번째 제품 클릭
@@ -110,7 +112,7 @@ final class OliveYoungCompUITests: XCTestCase {
         waitForNewPage(in: webView)
         
         // 5. 두 번째 셔터 게시글 클릭
-        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.7)
+        tapCoordinateByRelative(in: webView, x: 0.5, y: 0.77)
         waitForNewPage(in: webView)
         
         goBack(in: app)
