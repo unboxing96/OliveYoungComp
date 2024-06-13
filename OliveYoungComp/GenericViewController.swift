@@ -42,7 +42,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         contentController.add(self, name: "reactPropsHandler")
         contentController.add(self, name: "historyHandler")
         contentController.add(self, name: "fetchHandler")
-        contentController.add(self, name: "navigationHandler") // 추가
+        contentController.add(self, name: "nextJSNavigationHandler") // 추가
         
         let navigationBarButtonJsCode = """
         window.addEventListener('load', function() {
@@ -200,7 +200,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                 if (shallow || url.includes('t_click=GNB') || url.includes('history')) return;
 
                 const fullUrl = 'https://m.oliveyoung.co.kr' + url;
-                window.webkit.messageHandlers.navigationHandler.postMessage({
+                window.webkit.messageHandlers.nextJSNavigationHandler.postMessage({
                     action: 'navigate',
                     url: fullUrl
                 });
@@ -365,7 +365,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                let url = URL(string: urlString) {
                     print("Received navigation message for URL: \(url)")
             }
-        case "navigationHandler": // 추가
+        case "nextJSNavigationHandler": // 추가
             if let messageBody = message.body as? [String: Any],
                let action = messageBody["action"] as? String,
                action == "navigate",
