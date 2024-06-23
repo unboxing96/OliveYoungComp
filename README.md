@@ -16,6 +16,7 @@
 
 ### 📝 상세 보고서
 https://gowild.tistory.com/73
+네트워크 사용량 32.4% 감소.
 
 </br>
 
