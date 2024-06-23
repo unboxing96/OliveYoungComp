@@ -29,7 +29,6 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if self.isMovingFromParent {
-            // Remove WKWebView from superview and deallocate
             webView.removeFromSuperview()
             webView.navigationDelegate = nil
             webView = nil
@@ -39,10 +38,8 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     func configureWebView() {
         let contentController = WKUserContentController()
         contentController.add(self, name: "navigationBarButtonHandler")
-        contentController.add(self, name: "reactPropsHandler")
-        contentController.add(self, name: "historyHandler")
-        contentController.add(self, name: "fetchHandler")
-        contentController.add(self, name: "nextJSNavigationHandler") // 추가
+        contentController.add(self, name: "nextJSNavigationHandler")
+        contentController.add(self, name: "webToAppHandler") // 추가
         
         let navigationBarButtonJsCode = """
         window.addEventListener('load', function() {
@@ -59,7 +56,7 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                         (linkClass.includes(searchButtonClass) ||
                          linkClass.includes(basketButtonClass))) {
                         link.addEventListener('click', function(event) {
-                            event.preventDefault(); // 기본 네비게이션 방지
+                            event.preventDefault();
                             var url = event.currentTarget.href;
                             window.webkit.messageHandlers.navigationBarButtonHandler.postMessage({
                                 action: 'navigate',
@@ -83,118 +80,28 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         });
         """
         
-        let addClickListenerToReactProps = """
-        window.addEventListener('load', function() {
-            function addClickListenerToLinks() {
-                var links = document.getElementsByTagName('a');
-                Array.prototype.forEach.call(links, function(link) {
-                    if (!link.getAttribute('data-event-attached-react-props')) {
-                        link.addEventListener('click', function(event) {
-                            event.preventDefault(); // 기본 네비게이션 방지
-
-                            console.log('Click event triggered');
-                            var element = event.target;
-                            var contentsUrl = null;
-
-                            // Try to find contentsUrl in the event target's dataset
-                            if (element.dataset.contentsurl) {
-                                contentsUrl = element.dataset.contentsurl;
-                                console.log('Found contentsUrl in dataset:', contentsUrl);
-                            } else {
-                                // Traverse up the DOM tree to find the dataset contentsurl
-                                while (element) {
-                                    if (element.dataset && element.dataset.contentsurl) {
-                                        contentsUrl = element.dataset.contentsurl;
-                                        console.log('Found contentsUrl in ancestor dataset:', contentsUrl);
-                                        break;
-                                    }
-                                    element = element.parentElement;
-                                }
-                            }
-
-                            if (contentsUrl) {
-                                window.webkit.messageHandlers.reactPropsHandler.postMessage({
-                                    action: 'navigate',
-                                    url: contentsUrl
-                                });
-                            } else {
-                                var url = event.currentTarget.href;
-                                window.webkit.messageHandlers.reactPropsHandler.postMessage({
-                                    action: 'navigate',
-                                    url: url
-                                });
-                            }
-                        });
-                        link.setAttribute('data-event-attached-react-props', 'true');
+        let webToAppJsCode = """
+        function callAppMethod() {
+            return new Promise((resolve, reject) => {
+                window.webkit.messageHandlers.webToAppHandler.postMessage('requestData');
+                window.handleAppResponse = function(response) {
+                    if (response) {
+                        resolve(response);
+                    } else {
+                        reject('No response from app');
                     }
-                });
-            }
-
-            addClickListenerToLinks();
-            var observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.addedNodes.length > 0) {
-                        addClickListenerToLinks();
-                    }
-                });
+                }
             });
-            observer.observe(document.body, { childList: true, subtree: true });
+        }
+
+        callAppMethod().then(response => {
+            console.log('Received response from app:', response);
+        }).catch(error => {
+            console.error('Error:', error);
         });
         """
-
-
         
-        let historyJsCode = """
-        (function(history){
-            var pushState = history.pushState;
-
-            history.pushState = function(state, title, url) {
-                console.log('pushState called with URL:', url); // 로그 추가
-                var result = pushState.apply(history, arguments);
-                window.webkit.messageHandlers.historyHandler.postMessage({
-                    action: 'navigate',
-                    type: 'pushState',  // 이벤트 타입 추가
-                    url: location.href
-                });
-                return;
-            };
-        })(window.history);
-        """
-        
-        let fetchJsCode = """
-        (function() {
-            // Capture fetch requests
-            var originalFetch = window.fetch;
-            window.fetch = function() {
-                return originalFetch.apply(this, arguments).then(function(response) {
-                    var clonedResponse = response.clone();
-                    clonedResponse.json().then(function(data) {
-                        window.webkit.messageHandlers.fetchHandler.postMessage({
-                            url: clonedResponse.url,
-                            data: data
-                        });
-                    });
-                    return response;
-                });
-            };
-
-            // Capture XMLHttpRequest requests
-            var originalXHR = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function(method, url) {
-                this.addEventListener('load', function() {
-                    if (this.responseType === '' || this.responseType === 'json') {
-                        window.webkit.messageHandlers.fetchHandler.postMessage({
-                            url: url,
-                            data: this.responseText
-                        });
-                    }
-                });
-                originalXHR.apply(this, arguments);
-            };
-        })();
-        """
-        
-        let nextJsNavigationHandler = """
+        let nextJsCode = """
         (function() {
             const handleRouteChange = (url, { shallow }) => {
                 if (shallow || url.includes('t_click=GNB') || url.includes('history')) return;
@@ -221,23 +128,14 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             }
         })();
         """
-
-
- 
         let navigationBarButtonUserScript = WKUserScript(source: navigationBarButtonJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//        let addClickListenerToReactPropsScript = WKUserScript(source: addClickListenerToReactProps, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//        let historyUserScript = WKUserScript(source: historyJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//        let fetchUserScript = WKUserScript(source: fetchJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        let nextJsNavigationHandlerUserScript = WKUserScript(source: nextJsNavigationHandler, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-
+        let webToAppUserScript = WKUserScript(source: webToAppJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let nextJsNavigationHandlerUserScript = WKUserScript(source: nextJsCode, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         
         contentController.addUserScript(navigationBarButtonUserScript)
-//        contentController.addUserScript(addClickListenerToReactPropsScript)
-    //    contentController.addUserScript(historyUserScript)
-    //    contentController.addUserScript(fetchUserScript)
         contentController.addUserScript(nextJsNavigationHandlerUserScript)
-
-        
+        contentController.addUserScript(webToAppUserScript)
+//        
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.userContentController = contentController
         
@@ -283,33 +181,19 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             decisionHandler(.allow)
             return
         }
-        
-        print("GenericViewController | decidePolicyFor | url: \(url)")
-        
+            
         // 현재 요청된 URL이 바로 직전에 호출된 URL인 경우 -> 차단
         if let lastLoadedURL = AppState.shared.lastLoadedURL, lastLoadedURL == url {
-            print("GenericViewController | 현재 요청된 URL이 바로 직전에 호출된 URL인 경우")
             decisionHandler(.cancel)
             return
         }
         
         // 차단해야 하는 URL인 경우 -> 차단
         if vcvm.shouldBlockURL(url) {
-            print("GenericViewController | 차단해야 하는 URL인 경우")
             decisionHandler(.cancel)
             return
         }
-        
-//        // 새로고침 해야 하는 경우(탭바 등) -> push 하지 않고 페이지 이동 allow
-//        if vcvm.shouldRefreshURL(url) {
-//            print("GenericViewController | 새로고침 해야 하는 경우(탭바 등)")
-//            decisionHandler(.allow)
-//            return
-//        }
-        
-        // stack에 push 해야 하는 경우
-        print("GenericViewController | stack에 push 해야 하는 경우")
-        
+
         let modifiedURL = vcvm.addSuffixToMainBanner(url)
         let newVC = GenericViewController(url: modifiedURL)
         self.navigationController?.pushViewController(newVC, animated: true)
@@ -319,10 +203,6 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print("GenericViewController | userContentController | didReceive message")
-        print("message.name: \(message.name)")
-        print("message.body: \(message.body)")
-        
         switch message.name {
         case "navigationBarButtonHandler":
             if let messageBody = message.body as? [String: Any],
@@ -330,56 +210,37 @@ class GenericViewController: UIViewController, WKNavigationDelegate, WKScriptMes
                action == "navigate",
                let urlString = messageBody["url"] as? String,
                let url = URL(string: urlString) {
-                print("Received navigation message for URL: \(url)")
-
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
             }
-        case "reactPropsHandler":
+        case "nextJSNavigationHandler":
             if let messageBody = message.body as? [String: Any],
                let action = messageBody["action"] as? String,
                action == "navigate",
                let urlString = messageBody["url"] as? String,
                let url = URL(string: urlString) {
-                print("Received navigation message for URL: \(url)")
-
-                let newVC = GenericViewController(url: url)
-                self.navigationController?.pushViewController(newVC, animated: true)
-            }
-        case "historyHandler":
-            if let messageBody = message.body as? [String: Any],
-               let action = messageBody["action"] as? String,
-               action == "navigate",
-               let urlString = messageBody["url"] as? String,
-               let url = URL(string: urlString) {
-                print("Received navigation message for URL: \(url)")
-
-                let newVC = GenericViewController(url: url)
-                self.navigationController?.pushViewController(newVC, animated: true)
-            }
-        case "fetchHandler":
-            if let messageBody = message.body as? [String: Any],
-               let action = messageBody["action"] as? String,
-               action == "navigate",
-               let urlString = messageBody["url"] as? String,
-               let url = URL(string: urlString) {
-                    print("Received navigation message for URL: \(url)")
-            }
-        case "nextJSNavigationHandler": // 추가
-            if let messageBody = message.body as? [String: Any],
-               let action = messageBody["action"] as? String,
-               action == "navigate",
-               let urlString = messageBody["url"] as? String,
-               let url = URL(string: urlString) {
-                print("Received navigation message for URL: \(url)")
-                
                 if isInitialLoad {
-                    print("Initial load - ignoring navigation request")
                     return
                 }
 
                 let newVC = GenericViewController(url: url)
                 self.navigationController?.pushViewController(newVC, animated: true)
+            }
+        case "webToAppHandler":
+            if let messageBody = message.body as? String, messageBody == "requestData" {
+                // 앱에서 특정한 case에 따라 웹으로 데이터를 전송
+                var responseMessage: String
+                
+                // 특정 case에 따른 메시지 반환 예시
+                switch AppState.shared.initialLoadCompleted {
+                case true:
+                    responseMessage = "Response for true"
+                case false:
+                    responseMessage = "Response for false"
+                }
+                
+                let jsCode = "handleAppResponse('\(responseMessage)');"
+                webView.evaluateJavaScript(jsCode, completionHandler: nil)
             }
         default:
             break

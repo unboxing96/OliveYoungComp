@@ -41,7 +41,7 @@ final class OliveYoungCompUITests: XCTestCase {
         waitForNewPage(in: webView)
         
         scrollToElement(in: webView, targetText: "카테고리 랭킹")
-        doScroll(in: webView, startDy: 0.5, endDy: 0.45)
+        doScroll(in: webView, startDy: 0.5, endDy: 0.40)
         waitForNewPage(in: webView)
         
         tapButtonByText(in: webView, text: "클렌징")
@@ -218,7 +218,6 @@ extension XCTestCase {
         var count = 0
         
         while !elementToScrollTo.exists && count < maxScrolls {
-            print("count: \(count)")
             context.swipeUp()
             count += 1
         }

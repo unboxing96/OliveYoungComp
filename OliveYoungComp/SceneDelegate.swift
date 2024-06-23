@@ -51,22 +51,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneDidDisconnect(_ scene: UIScene) {
-        // Scene이 종료될 때 호출됩니다.
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // Scene이 활성화될 때 호출됩니다.
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        // Scene이 비활성화될 때 호출됩니다.
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // Scene이 포그라운드로 전환될 때 호출됩니다.
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Scene이 백그라운드로 전환될 때 호출됩니다.
     }
 }
