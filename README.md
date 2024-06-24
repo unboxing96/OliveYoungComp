@@ -149,36 +149,3 @@ https://gowild.tistory.com/73
 
 </br>
 </br>
-
-# 팀 개발자들을 위한 Git, Code Convention
-
-## 네이밍
-- 이슈</br>
-  `이슈 핵심 내용`</br>
-  `구글 로그인 구현`</br>
-
-- 브랜치</br>
-  `브랜치 종류/이슈 번호-개발할 기능 이름`</br>
-  `feat/1-login-view`</br>
-  
-- 커밋</br>
-  `(종류 이모지)[이슈 번호] 이슈 핵심 내용`</br>
-  `:bug:[#11][#12] 구글 로그인 탈퇴시 발생하는 버그 해결`</br>
-  
-- PR</br>
-  `(종류 이모지)[이슈 번호] 커밋 내용`</br>
-  `:zap:[#1] 로그인 화면 개발`</br>
-
-## 브랜치, 커밋 종류
-|           종류              | 이모지                                          |       설명               |
-|:---------------------------|:----------------------------------------------|:------------------------|
-| initial                    | :tada: `:tada:`                               | 초기 설정                 |
-| refactor                   | :recycle: `:recycle:`                         | 파일·타입 이름 변경, 파일 분리 |
-| bug                        | :bug: `:bug:`                                 | 버그                     |
-| feat                       | :zap: `:zap:`                                 | 기능                     |
-| gui                        | :art: `:art:`                                 | View                    |
-| chore                      | :broom: `:broom:`                             | SPM, 세팅, 빌드 등         |
-| delete                     | :wastebasket: `:wastebasket:`                 | 파일 삭제                 |
-| docs                       | :books: `:books:`                             | 코드 외 문서               |
-| asset                      | :heart: `:heart:`                             | 에셋                     |
-| comment                    | :memo: `:memo:`                               | 주석                     |
